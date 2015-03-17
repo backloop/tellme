@@ -1,0 +1,243 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Sensor data</title>
+	<link href="main.css" rel="stylesheet" type="text/css">
+	<script language="javascript" type="text/javascript" src="flot/jquery.js"></script>
+	<script language="javascript" type="text/javascript" src="flot/jquery.flot.js"></script>
+	<script language="javascript" type="text/javascript" src="flot/jquery.flot.time.js"></script>
+	<script language="javascript" type="text/javascript" src="flot/jquery.flot.selection.js"></script>
+	<!--script language="javascript" type="text/javascript" src="flot/jquery.flot.navigate.js"></script-->
+	<script type="text/javascript">
+
+	// function required for the tooltip DOM tree insertion to work
+	$(function() {
+
+          function correctTimestamp(d) {
+            // correct the timestamps - they are recorded as the daily
+            // midnights in UTC+0100, but Flot always displays dates in UTC
+            // so we have to add one hour to hit the midnights in the plot
+            
+            for (var i = 0; i < d.length; ++i) {
+            	d[i][0] += 60 * 60 * 1000;
+            }
+            
+            return d;
+          }            
+           
+          function flotMarkings(axes) {
+            // helper for returning the weekends in a period
+            var markings = [],
+            	d = new Date(axes.xaxis.min);
+            
+            // go to the first Saturday
+            
+            d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 1) % 7))
+            d.setUTCSeconds(0);
+            d.setUTCMinutes(0);
+            d.setUTCHours(0);
+            
+            var i = d.getTime();
+            
+            // when we don't set yaxis, the rectangle automatically
+            // extends to infinity upwards and downwards
+            
+            // weekend areas
+            i = d.getTime();
+            do {
+            	markings.push({ xaxis: { from: i, to: i + 2 * 24 * 60 * 60 * 1000 } });
+            	i += 7 * 24 * 60 * 60 * 1000;
+            } while (i < axes.xaxis.max);
+            
+            // daily delimiters
+            i = d.getTime();
+            do {
+            	markings.push({ xaxis: { from: i, to: i }, color: "#dddddd", lineWidth: 1 });
+            	i += 24 * 60 * 60 * 1000;
+            } while (i < axes.xaxis.max);
+	
+            return markings;
+          }
+
+	  var options = {
+          	legend: {
+                        container: $("#legend-placeholder")
+                },
+                lines: {
+          		show: true
+          	},
+          	points: {
+          		show: false
+          	},
+	  	grid: {
+                          hoverable: true,
+                          clickable: true,
+		          markings: flotMarkings
+                },       
+                selection: {
+                          mode: "x"
+                },
+	  	xaxis: {
+          		mode: "time",
+	  		timeformat: "%Y-%m-%d",
+	  		tickSize: [7, "day"]
+          	},
+          };
+  
+          var optionsOverview = {
+                legend: {
+                        show: false
+                },
+        	series: {
+        		lines: {
+        			show: true,
+        			lineWidth: 1
+        		},
+        		shadowSize: 0
+        	},
+        	xaxis: {
+        		ticks: [],
+        		mode: "time"
+        	},
+        	yaxis: {
+        		ticks: [],
+        		autoscaleMargin: 0.1
+        	},
+        	selection: {
+        		mode: "x"
+        	}
+          };
+ 
+	  $("<div id='tooltip'></div>").css({
+            position: "absolute",
+            display: "none",
+            border: "1px solid #fdd",
+            padding: "2px",
+            "background-color": "#fee",
+            opacity: 0.80
+          }).appendTo("body");
+
+          function temperatureTooltipLabel(event, pos, item) {
+            tooltipLabel(event, pos, item, 1, "&deg;C");
+          }
+
+          function humidityTooltipLabel(event, pos, item) {
+            tooltipLabel(event, pos, item, 0, "% RH");
+          }
+
+          function tooltipLabel(event, pos, item, accuracy, units) {
+            if (item) {
+              var x = item.datapoint[0],
+                  y = item.datapoint[1].toFixed(accuracy);
+              var d = new Date(parseInt(x));
+              var s = d.getHours() + ":" + d.getMinutes();
+
+              //$("#tooltip").html(item.series.label + " at " + s + " = " + y)
+              //$("#tooltip").html(s + " = " + y + "&deg;C")
+              $("#tooltip").html(y + units + " (" + s + ")")
+	  		.css({top: item.pageY+5, left: item.pageX+10})
+              		.fadeIn(200);
+            } else {
+              $("#tooltip").hide();
+            }
+          };
+
+          $("#temperature-placeholder").bind("plothover", temperatureTooltipLabel);
+          $("#humidity-placeholder").bind("plothover", humidityTooltipLabel); 
+
+          var temperatureData;
+          var temperatureOverview;
+          function onTemperatureDataReceived(data) {
+		data = correctTimestamp(data);
+          	var plot = $.plot("#temperature-placeholder", data, options);
+                temperatureOverview = $.plot("#temperature-overview", data, optionsOverview);
+		temperatureData = data;
+
+          	$("#temperature-placeholder").bind("plotselected", temperaturePlotSelected);
+                $("#temperature-overview").bind("plotselected", function (event, ranges) {
+                	plot.setSelection(ranges);
+                });
+
+          }
+          
+          var humidityData;
+          var humidityOverview;
+	  function onHumidityDataReceived(data) {
+		data = correctTimestamp(data);
+          	var plot = $.plot("#humidity-placeholder", data, options);
+                humidityOverview = $.plot("#humidity-overview", data, optionsOverview);
+                humidityData = data;
+                
+          	$("#humidity-placeholder").bind("plotselected", humidityPlotSelected);
+		$("#humidity-overview").bind("plotselected", function (event, ranges) {
+                	plot.setSelection(ranges);
+                });
+          }
+          
+          $.ajax({
+          	url: "data-temperature.json",
+          	type: "GET",
+          	dataType: "json",
+          	success: onTemperatureDataReceived
+          });
+
+          $.ajax({
+          	url: "data-humidity.json",
+          	type: "GET",
+          	dataType: "json",
+          	success: onHumidityDataReceived
+          });
+
+          function temperaturePlotSelected(event, ranges) {
+		plotSelected("#temperature-placeholder", temperatureData, temperatureOverview, event, ranges);
+	  };
+
+          function humidityPlotSelected(event, ranges) {
+		plotSelected("#humidity-placeholder", humidityData, humidityOverview, event, ranges);
+	  };
+
+          function plotSelected(plotid, data, overview, event, ranges) {
+          	// do the zooming
+          
+          	plot = $.plot(plotid, data, $.extend(true, {}, options, {
+          		xaxis: {
+          			min: ranges.xaxis.from,
+          			max: ranges.xaxis.to
+          		}
+          	}));
+          
+          	// don't fire event on the overview to prevent eternal loop
+          
+          	overview.setSelection(ranges, true);
+          };
+          
+	});
+
+	</script>
+  </head>
+  <body>
+    <div id="content" style="width: 100%; overflow: hidden;">
+      
+      <div style="float:left;">
+        <div class="header" style="width:600px">Temperature</div>
+        <div id="temperature-placeholder" style="width:600px; height:400px;"></div>
+        <div id="temperature-overview" style="height:100px"></div>
+      </div>
+      
+      <div style="float:left; margin-left:100px;">
+        <div class="header" style="width:600px">Humidity</div>
+        <div id="humidity-placeholder" style="width:600px; height:400px;"></div>
+        <div id="humidity-overview" style="height:100px"></div>
+      </div>	
+      
+      <div style="clear:both;"></div>
+     
+      <div>
+        <div class="header" style="width:600px">Legend</div>
+        <div id="legend-placeholder" style="height:250px"></div>
+      </div>
+   </div>
+  
+  </body>
+</html>
