@@ -16,6 +16,9 @@ The display of the data is web based and uses the Flot charts framework; this me
 | index.html | Contains the flot charts configuration |
 | main.css | Self explanatory |
 
+##Screenshot
+![Screenshot](https://raw.github.com/backloop/tellme/master/screenshots/tellme-screenshot.png)
+
 ##Usage
 1. Install the following dependencies
 
