@@ -4,6 +4,8 @@
 import sys, getopt, httplib, urllib, json, os
 import oauth.oauth as oauth
 from configobj import ConfigObj
+from datetime import datetime
+from tabulate import tabulate
 
 PUBLIC_KEY = ''
 PRIVATE_KEY = ''
@@ -26,8 +28,9 @@ def printUsage():
 	print("                      [ --dimlevel level --dim device ]")
 	print("                      [ --up device --down device ]")
 	print("")
-	print("       --list (-l short option)")
-	print("             List currently configured devices.")
+	print("       --list type (-l short option)")
+	print("             List currently configured components of a defined type.")
+	print("             Valid types are {devices, sensors}")
 	print("")
 	print("       --help (-h short option)")
 	print("             Shows this screen.")
@@ -66,9 +69,25 @@ def printUsage():
 	print("")
 	print("Report bugs to <info.tech@telldus.se>")
 
+def listSensors():
+	response = doRequest('sensors/list', {'includeValues': 1, 'includeIgnored': 1})
+	print("Number of sensors: %i" % len(response['sensor']));
+	table=[]
+	headers=["ID", "Name", "Time", "Temp", "Humidity"]
+	for sensor in response['sensor']:
+		table.append((sensor['id'],
+				sensor['name'],
+				datetime.fromtimestamp(sensor['lastUpdated']),
+				sensor['temp'],
+				sensor['humidity']))
+	print tabulate(table, headers, tablefmt="simple")
+
+
 def listDevices():
 	response = doRequest('devices/list', {'supportedMethods': SUPPORTED_METHODS})
 	print("Number of devices: %i" % len(response['device']));
+	table=[]
+	headers=["ID", "Name", "State"]
 	for device in response['device']:
 		if (device['state'] == TELLSTICK_TURNON):
 			state = 'ON'
@@ -82,8 +101,9 @@ def listDevices():
 			state = "DOWN"
 		else:
 			state = 'Unknown state'
+		table.append((device['id'], device['name'], state))
+	print tabulate(table, headers, tablefmt="simple")
 
-		print("%s\t%s\t%s" % (device['id'], device['name'], state));
 
 def doMethod(deviceId, methodId, methodValue = 0):
 	response = doRequest('device/info', {'id': deviceId})
@@ -196,7 +216,7 @@ def main(argv):
 		authenticate()
 		return
 	try:
-		opts, args = getopt.getopt(argv, "ln:f:d:b:v:h", ["list", "on=", "off=", "dim=", "bell=", "dimlevel=", "up=", "down=", "help"])
+		opts, args = getopt.getopt(argv, "l:n:f:d:b:v:h", ["list=", "on=", "off=", "dim=", "bell=", "dimlevel=", "up=", "down=", "help"])
 	except getopt.GetoptError:
 		printUsage()
 		sys.exit(2)
@@ -208,7 +228,12 @@ def main(argv):
 			printUsage()
 
 		elif opt in ("-l", "--list"):
-			listDevices()
+			if arg == "devices":
+				listDevices()
+			elif arg == "sensors":
+				listSensors()
+			else:
+				print("Unsupported --list argument")
 
 		elif opt in ("-n", "--on"):
 			doMethod(arg, TELLSTICK_TURNON)
