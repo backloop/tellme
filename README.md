@@ -36,4 +36,4 @@ The display of the data is web based and uses the Flot charts framework; this me
 * [Telldus Live](http://live.telldus.com/)
 * [Telldus Live API](https://api.telldus.com/)
 * [Original tdtool.py implementation](http://developer.telldus.com/browser/examples/python/live/tdtool/tdtool.py?rev=a35ad875d20fd8935be7c87426ab33cc231528f7)
-* [Flot](http://www.flotcharts.org/)
+* [Flot Charts](http://www.flotcharts.org/)
