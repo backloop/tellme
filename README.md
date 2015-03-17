@@ -11,8 +11,8 @@ The display of the data is web based and uses the Flot charts framework; this me
 | tdtool.py | Script enabling Telldus Live API communication |
 | data.txt | Raw sensor data file, human readable, would benefit from some compression |
 | flot-filter.py | Script that massages the data.txt file ito something that Flot charts can consume |
-| data.temperature.json | Filtered sensor data file |
-| data.humidity.json | Filtered sensor data file |
+| data-temperature.json | Filtered sensor data file |
+| data-humidity.json | Filtered sensor data file |
 | index.html | Contains the flot charts configuration |
 | main.css | Self explanatory |
 
