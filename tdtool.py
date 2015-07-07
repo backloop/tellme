@@ -83,7 +83,7 @@ def listSensors():
 				sensor['humidity']))
 		except KeyError as ke:
 			#print("Missing key: %s for sensor name: %s" % (ke, sensor['name']))
-                        :
+                        pass
 	print tabulate(table, headers, tablefmt="simple")
 
 
