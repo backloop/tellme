@@ -75,11 +75,14 @@ def listSensors():
 	table=[]
 	headers=["ID", "Name", "Time", "Temp", "Humidity"]
 	for sensor in response['sensor']:
-		table.append((sensor['id'],
+		try:
+			table.append((sensor['id'],
 				sensor['name'],
 				datetime.fromtimestamp(sensor['lastUpdated']),
 				sensor['temp'],
 				sensor['humidity']))
+		except KeyError as ke:
+			print("Missing key: %s for sensor name: %s" % (ke, sensor['name']))
 	print tabulate(table, headers, tablefmt="simple")
 
 
