@@ -1,7 +1,7 @@
 # tellme
 Very simple sensor logger and viewer for Tellstick Net devices
 
-##Description
+## Description
 The Tellstick Net wireless home automation devices communicate data to the Telldus Live service. The Telldus Live service does not provide any sensor logging functionality, only the last reading is available through the web GUI. These scripts communicate with the Telldus Live API and poll, store and display the sensor history for a registered user.
 
 The display of the data is web based and uses the Flot charts framework; this means access to visual treats like e.g. detailed data on mouse-over, zooming into selected areas in the graph and extensive customization capabilities...
@@ -16,10 +16,10 @@ The display of the data is web based and uses the Flot charts framework; this me
 | index.html | Contains the flot charts configuration |
 | main.css | Self explanatory |
 
-##Screenshot
+## Screenshot
 ![Screenshot](https://raw.github.com/backloop/tellme/master/screenshots/tellme-screenshot.png)
 
-##Usage
+## Usage
 1. Install the following dependencies
 
   `sudo apt-get install python-oauth python-configobj pyhton-pip`
